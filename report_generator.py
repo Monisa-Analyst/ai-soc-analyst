@@ -3,13 +3,7 @@ import json
 from datetime import datetime
 from pathlib import Path
 
-# ---------------------------------------------------------
-# REPORT GENERATION MODULE
-# Produces structured plain-text and JSON reports for SOC
-# analysts and management. These reports summarize triaged
-# alerts, risk scores, and recommended actions for a given
-# time period. Designed to be printable and shareable.
-# ---------------------------------------------------------
+# plain text and JSON incident report exporting helper
 
 # Detect Streamlit Cloud vs. local environment
 if os.path.exists("/mount/src/ai-soc-analyst"):
@@ -19,9 +13,7 @@ else:
 REPORTS_DIR.mkdir(exist_ok=True)
 
 
-# ===================================================================
-# -- PLAIN-TEXT INCIDENT REPORT (For Tier-2 Analysts / Management)
-# ===================================================================
+
 
 def generate_text_report(alerts: list[dict], title: str = "SOC Incident Report") -> str:
     """
@@ -141,9 +133,7 @@ def generate_text_report(alerts: list[dict], title: str = "SOC Incident Report")
     return "\n".join(lines)
 
 
-# ===================================================================
-# -- JSON REPORT (For API Integration / SIEM Forwarding)
-# ===================================================================
+
 
 def generate_json_report(alerts: list[dict], title: str = "SOC Incident Report") -> dict:
     """
@@ -205,9 +195,7 @@ def generate_json_report(alerts: list[dict], title: str = "SOC Incident Report")
     }
 
 
-# ===================================================================
-# -- FILE SAVE HELPERS
-# ===================================================================
+
 
 def save_text_report(content: str, filename: str = None) -> str:
     """
@@ -269,9 +257,7 @@ def list_saved_reports() -> list[dict]:
     return reports
 
 
-# ===================================================================
-# -- INTERNAL HELPER
-# ===================================================================
+
 
 def _wrap_text(text: str, width: int = 70) -> list[str]:
     """

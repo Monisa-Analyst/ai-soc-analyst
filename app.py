@@ -26,9 +26,9 @@ from logger import (
     get_recent_logs
 )
 
-# ---------------------------------------------------------
-# PAGE CONFIGURATION
-# ---------------------------------------------------------
+
+# page configuration
+
 
 st.set_page_config(
     page_title="SOC AI Triage | Sentinel Platform",
@@ -37,10 +37,9 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# ---------------------------------------------------------
-# CUSTOM CSS
-# Clean, professional SOC-style UI with dark accents
-# ---------------------------------------------------------
+
+# styling overrides
+
 
 st.markdown("""
 <style>
@@ -215,16 +214,16 @@ hr { border-color: #e2e8f0; }
 </style>
 """, unsafe_allow_html=True)
 
-# ---------------------------------------------------------
-# DATABASE INIT
-# ---------------------------------------------------------
+
+# db init
+
 
 init_db()
 
 
-# ---------------------------------------------------------
-# SIDEBAR
-# ---------------------------------------------------------
+
+# sidebar layout
+
 
 with st.sidebar:
     st.markdown("""
@@ -268,9 +267,9 @@ with st.sidebar:
     st.markdown("- 💼 [LinkedIn Profile](https://www.linkedin.com/in/monisa-l-333546366)")
 
 
-# ---------------------------------------------------------
-# PIPELINE ENGINE
-# ---------------------------------------------------------
+
+# triage pipeline orchestration
+
 
 def run_pipeline(logs_list: list, source: str = "Upload"):
     """
@@ -345,9 +344,9 @@ def run_pipeline(logs_list: list, source: str = "Upload"):
     st.success(f"✅ Pipeline complete — {total} alert(s) triaged.")
 
 
-# ---------------------------------------------------------
-# TAB LAYOUT
-# ---------------------------------------------------------
+
+# setup dashboard tabs
+
 
 tabs = st.tabs(["📊 Dashboard", "📥 Ingest & Triage", "📋 Reports", "⚙️ Logs & Settings"])
 
@@ -371,7 +370,7 @@ with tabs[0]:
     if severity_filter != "All":
         display_alerts = [a for a in display_alerts if a.get("severity") == severity_filter]
 
-    # --- KPI CARDS ---
+    # kpi cards
     st.markdown("### Key Performance Indicators")
 
     kpi1, kpi2, kpi3, kpi4, kpi5 = st.columns(5)
@@ -422,7 +421,7 @@ with tabs[0]:
 
     st.markdown("<br>", unsafe_allow_html=True)
 
-    # --- ANALYTICS CHARTS ---
+    # analytics charts
     if stats['total'] > 0:
         col_chart1, col_chart2 = st.columns(2)
 
@@ -466,7 +465,7 @@ with tabs[0]:
 
     st.markdown("---")
 
-    # --- ALERT CARDS ---
+    # alert detail cards
     st.markdown(f"### Alert Details ({len(display_alerts)} shown)")
 
     if not display_alerts:
@@ -597,7 +596,7 @@ with tabs[1]:
 
     ingest_tabs = st.tabs(["📁 File Upload", "🧪 Sample Datasets", "✏️ Manual Entry"])
 
-    # --- 2a: File Upload ---
+    # file upload triage
     with ingest_tabs[0]:
         st.markdown("### Upload Log File")
         st.caption("Supported formats: CSV (with headers), JSON array of event objects")
@@ -629,7 +628,7 @@ with tabs[1]:
                 st.error(f"Error parsing file: {e}")
                 log_error("File upload parse", e)
 
-    # --- 2b: Sample Datasets ---
+    # load sample data
     with ingest_tabs[1]:
         st.markdown("### Pre-loaded Sample Datasets")
         st.caption("These datasets simulate realistic enterprise log data for demonstration and testing.")
@@ -671,7 +670,7 @@ with tabs[1]:
             except Exception as e:
                 st.error(f"Error: {e}")
 
-    # --- 2c: Manual Entry ---
+    # manual alert ingestion
     with ingest_tabs[2]:
         st.markdown("### Manual Alert Entry")
         st.caption("Enter a single alert directly for quick triage testing.")

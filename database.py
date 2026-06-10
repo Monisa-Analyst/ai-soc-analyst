@@ -5,17 +5,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from collections import Counter
 
-# ---------------------------------------------------------
-# DATABASE PERSISTENCE MODULE
-# Handles all data storage, retrieval, and query functions
-# for the SOC alert management system using SQLite.
-#
-# Design decisions:
-#  - Row factory enables column-name access instead of index
-#  - All dates stored as ISO 8601 UTC strings
-#  - raw_log stores the complete original event as JSON
-#  - risk_score field added for prioritized analyst workflow
-# ---------------------------------------------------------
+# local sqlite db helper for alert storage and queries
 
 # Detect Streamlit Cloud vs. local environment
 if os.path.exists("/mount/src/ai-soc-analyst"):
@@ -24,23 +14,9 @@ else:
     DB_FILE = str(Path(__file__).parent / "soc_triage.db")
 
 
-# ===================================================================
-# -- SCHEMA INITIALIZATION
-# ===================================================================
-
+# set up tables
 def init_db():
-    """
-    Initializes the SQLite database schema.
-    Creates the 'alerts' table if it does not already exist.
-    Safe to call on every application startup — it is idempotent.
-
-    The schema includes columns for:
-      - Core alert metadata (IP, type, severity, message)
-      - Enrichment data from VirusTotal (vt_result as JSON string)
-      - AI analysis outputs (summary, MITRE tag, response plan)
-      - Analyst workflow fields (status, risk_score, analyst_notes)
-      - The original raw log as a JSON blob for forensic access
-    """
+    """create alerts table and indices if missing"""
     conn = sqlite3.connect(DB_FILE)
     cur = conn.cursor()
 
@@ -78,22 +54,9 @@ def init_db():
     conn.close()
 
 
-# ===================================================================
-# -- ALERT INSERTION
-# ===================================================================
-
+# save raw alerts
 def insert_alert(alert_dict: dict) -> int:
-    """
-    Parses a raw log dictionary and inserts it as a new alert record.
-    Handles field name aliases (e.g., 'src_ip' vs 'source_ip') from
-    different log format conventions.
-
-    Args:
-        alert_dict : Raw alert data from CSV, JSON, or manual entry.
-
-    Returns:
-        The integer row ID of the newly inserted record.
-    """
+    """parse and save raw alert, returns database row id"""
     conn = sqlite3.connect(DB_FILE)
     cur = conn.cursor()
 
@@ -117,20 +80,9 @@ def insert_alert(alert_dict: dict) -> int:
     return row_id
 
 
-# ===================================================================
-# -- ALERT UPDATES
-# ===================================================================
-
+# update columns
 def update_alert(row_id: int, fields: dict):
-    """
-    Updates one or more columns for an existing alert record.
-    Used after the enrichment and analysis pipeline completes to
-    write back intelligence fields to the database.
-
-    Args:
-        row_id : The primary key of the alert to update.
-        fields : Dictionary of column_name → new_value pairs.
-    """
+    """update matching fields for an alert ID"""
     if not fields:
         return
 
@@ -144,15 +96,7 @@ def update_alert(row_id: int, fields: dict):
 
 
 def update_alert_status(row_id: int, status: str, notes: str = ""):
-    """
-    Updates the analyst workflow status of an alert.
-    Valid statuses: 'New', 'In Review', 'Escalated', 'Resolved', 'False Positive'
-
-    Args:
-        row_id : Alert primary key.
-        status : New status string.
-        notes  : Optional analyst annotation to append.
-    """
+    """change alert status and add notes"""
     conn = sqlite3.connect(DB_FILE)
     cur = conn.cursor()
     cur.execute(
@@ -164,13 +108,7 @@ def update_alert_status(row_id: int, status: str, notes: str = ""):
 
 
 def mark_false_positive(row_id: int):
-    """
-    Marks an alert as a confirmed false positive.
-    Updating this flag is important for reducing noise in future metrics.
-
-    Args:
-        row_id : Alert primary key.
-    """
+    """mark alert as false positive"""
     conn = sqlite3.connect(DB_FILE)
     cur = conn.cursor()
     cur.execute(
@@ -181,18 +119,9 @@ def mark_false_positive(row_id: int):
     conn.close()
 
 
-# ===================================================================
-# -- ALERT RETRIEVAL
-# ===================================================================
-
+# fetch functions
 def get_all_alerts() -> list[dict]:
-    """
-    Retrieves all alert records from the database, ordered by risk score
-    (highest first) to prioritize analyst attention.
-
-    Returns:
-        List of dictionaries representing each alert row.
-    """
+    """get all alerts sorted by risk score"""
     return _query("SELECT * FROM alerts ORDER BY risk_score DESC, id DESC")
 
 
@@ -305,25 +234,9 @@ def get_recent_alerts(hours: int = 24) -> list[dict]:
     )
 
 
-# ===================================================================
-# -- ANALYTICS AND STATISTICS
-# ===================================================================
-
+# kpi metrics helper
 def get_statistics() -> dict:
-    """
-    Computes aggregate statistics across all alerts in the database.
-    These stats power the KPI cards at the top of the Dashboard tab.
-
-    Returns:
-        Dictionary with the following keys:
-          - total          : Total alert count
-          - by_severity    : Counter of alerts per severity level
-          - by_status      : Counter of alerts per status
-          - by_event_type  : Counter of alerts per event type (top 10)
-          - avg_risk_score : Mean risk score across all alerts
-          - malicious_pct  : Percentage of alerts with Malicious VT verdict
-          - false_positive_count : Number of confirmed false positives
-    """
+    """calculate kpi numbers for dashboard cards"""
     conn = sqlite3.connect(DB_FILE)
     conn.row_factory = sqlite3.Row
     cur = conn.cursor()
@@ -436,13 +349,7 @@ def clear_all_alerts():
 
 
 def export_alerts_csv() -> str:
-    """
-    Exports all alerts as a CSV-formatted string for download.
-    Used by the Reports tab in the Streamlit UI.
-
-    Returns:
-        CSV string with column headers and all alert data.
-    """
+    """format all alerts as CSV string for download"""
     rows = get_all_alerts()
     if not rows:
         return "No alerts to export."
@@ -469,16 +376,7 @@ def export_alerts_csv() -> str:
 # ===================================================================
 
 def _query(sql: str, params: tuple = ()) -> list[dict]:
-    """
-    Executes a SELECT query and returns results as a list of dicts.
-
-    Args:
-        sql    : SQL query string. Use ? for parameterized inputs.
-        params : Tuple of values to bind to the query parameters.
-
-    Returns:
-        List of row dictionaries, empty list on error.
-    """
+    """run select query and return rows as dicts"""
     conn = sqlite3.connect(DB_FILE)
     conn.row_factory = sqlite3.Row
     cur = conn.cursor()

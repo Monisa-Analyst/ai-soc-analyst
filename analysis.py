@@ -4,19 +4,7 @@ from pathlib import Path
 from openai import OpenAI
 from dotenv import load_dotenv
 
-# ---------------------------------------------------------
-# CORE ANALYSIS ENGINE
-# This module is the heart of the SOC triage system.
-# It handles three critical functions:
-#
-#   1. AI TRIAGE SUMMARY  — GPT-powered analyst notes
-#   2. MITRE ATT&CK MAPPING — Technique identification
-#   3. RESPONSE PLANNING — Actionable remediation steps
-#
-# Each function is designed with a graceful fallback so
-# the system remains 100% operational even without a
-# live OpenAI API connection.
-# ---------------------------------------------------------
+# triage, mitre mappings, and playbooks
 
 # Load environment variables from .env (keeps API keys out of source code)
 load_dotenv(Path(__file__).parent / ".env")
@@ -25,13 +13,7 @@ _key = os.getenv("OPENAI_API_KEY")
 _client = OpenAI(api_key=_key) if _key and _key.startswith("sk-") else None
 
 
-# ===================================================================
-# -- MITRE ATT&CK TECHNIQUE DATABASE
-# Maps security event keywords to MITRE ATT&CK Enterprise techniques.
-# Reference: https://attack.mitre.org/
-#
-# Format: ( [keyword_list], "TID – Technique Name", "Tactic" )
-# ===================================================================
+# map keyword patterns to mitre techniques
 
 MITRE_RULES = [
     # ------ Initial Access ------
@@ -97,12 +79,7 @@ MITRE_RULES = [
 ]
 
 
-# ===================================================================
-# -- SMART FALLBACK ANALYSIS ENGINE
-# Produces highly technical, professional-sounding analyst notes
-# when the OpenAI API is unavailable. The output is designed to
-# be indistinguishable from real analyst writing.
-# ===================================================================
+# fallback triage profiles when offline
 
 # Detailed profiles for every event type
 _PROFILES = {
@@ -248,24 +225,9 @@ def _get_smart_summary(alert: dict) -> str:
     )
 
 
-# ===================================================================
-# -- AI TRIAGE PIPELINE
-# ===================================================================
-
+# alert triage
 def triage_alert(alert_details: dict) -> str:
-    """
-    Primary triage function. Attempts to use GPT-3.5 for real-time
-    AI-powered analysis, with automatic fallback to the smart mock engine.
-
-    The GPT prompt is engineered to produce structured, Tier-1 analyst
-    style output including: threat description, IOCs, and next steps.
-
-    Args:
-        alert_details : Raw alert dictionary from the log ingestion pipeline.
-
-    Returns:
-        A detailed analyst summary string (plain text).
-    """
+    """run alert triage via OpenAI or offline fallback profile"""
     if _client:
         prompt = f"""You are a senior SOC analyst at a Fortune 500 company.
 Analyze the following security alert and produce a structured Tier-1 triage report.
@@ -306,24 +268,9 @@ Be specific, technical, and concise. Do not use vague language."""
     return _get_smart_summary(alert_details)
 
 
-# ===================================================================
-# -- MITRE ATT&CK MAPPING ENGINE
-# ===================================================================
-
+# mitre mapper
 def map_mitre(alert_details: dict) -> str:
-    """
-    Maps an alert to the most relevant MITRE ATT&CK technique using
-    keyword matching across all alert fields.
-
-    Returns both the technique ID and tactic for full ATT&CK context.
-    Multiple techniques may be identified for complex events.
-
-    Args:
-        alert_details : Raw alert dictionary.
-
-    Returns:
-        Formatted string with technique ID, name, and tactic.
-    """
+    """matches event keywords to MITRE techniques"""
     # Concatenate all string values from the alert into a single searchable blob
     blob = " ".join(str(v) for v in alert_details.values() if v).lower()
 
@@ -360,11 +307,7 @@ def map_mitre_short(alert_details: dict) -> str:
     return full.split("\n")[0].split("|")[0].strip()
 
 
-# ===================================================================
-# -- RESPONSE RECOMMENDATION ENGINE
-# ===================================================================
-
-# Detailed response playbooks for common threat categories
+# response playbook definitions
 _RESPONSE_PLAYBOOKS = {
     "sql injection": [
         "IMMEDIATE: Block source IP at WAF and perimeter firewall (block /32 for 72h).",
@@ -429,22 +372,7 @@ _STANDARD_RESPONSE = [
 
 
 def recommend_response(alert_details: dict, vt_result: dict) -> str:
-    """
-    Generates a detailed, step-by-step response plan tailored to the
-    specific threat type and severity of the alert.
-
-    Decision logic:
-      - Critical/High severity OR Malicious VT verdict → Full escalation playbook
-      - Known event type → Type-specific playbook steps
-      - Default → Standard monitoring procedure
-
-    Args:
-        alert_details : Raw alert dictionary.
-        vt_result     : VirusTotal enrichment intelligence result.
-
-    Returns:
-        Multi-line string with numbered response steps.
-    """
+    """build response recommendations based on severity and category"""
     sev     = str(alert_details.get("severity", "Medium")).lower()
     verdict = vt_result.get("verdict", "Clean")
     etype   = str(alert_details.get("event_type") or alert_details.get("type") or "").lower()

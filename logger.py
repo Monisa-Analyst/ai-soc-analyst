@@ -4,12 +4,7 @@ import logging
 from datetime import datetime
 from pathlib import Path
 
-# ---------------------------------------------------------
-# AUDIT LOGGING MODULE
-# Maintains a persistent, structured audit trail of every
-# action taken by the SOC triage system. This log is
-# essential for compliance and post-incident forensics.
-# ---------------------------------------------------------
+# structured action logger for compliance audit logging
 
 # Detect Streamlit Cloud vs. local environment
 if os.path.exists("/mount/src/ai-soc-analyst"):
@@ -21,7 +16,7 @@ LOG_DIR.mkdir(exist_ok=True)
 LOG_FILE = LOG_DIR / "soc_audit.log"
 PIPELINE_LOG = LOG_DIR / "pipeline_events.jsonl"  # Machine-readable JSONL format
 
-# --- Configure Python's built-in logging ---
+
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s  [%(levelname)s]  %(message)s",
@@ -203,7 +198,7 @@ def get_pipeline_events(n: int = 100) -> list[dict]:
     return events
 
 
-# --- Internal Helper Functions ---
+
 
 def _now() -> str:
     """Returns ISO 8601 formatted timestamp for log entries."""
