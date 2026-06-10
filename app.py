@@ -263,7 +263,6 @@ with st.sidebar:
     st.markdown("---")
     st.markdown('<div style="font-size:0.68rem;color:#64748b;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:8px;">Portfolio Links</div>', unsafe_allow_html=True)
     st.markdown("- 🐙 [GitHub Profile](https://github.com/Monisa-Analyst)")
-    st.markdown("- 🛒 [Sales Insights Dashboard](https://share.streamlit.io/monisa-analyst/sales-insights-dashboard/main/src/app.py)")
     st.markdown("- 💼 [LinkedIn Profile](https://www.linkedin.com/in/monisa-l-333546366)")
 
 
