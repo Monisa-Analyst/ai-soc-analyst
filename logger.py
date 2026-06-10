@@ -11,8 +11,11 @@ from pathlib import Path
 # essential for compliance and post-incident forensics.
 # ---------------------------------------------------------
 
-# Log file is stored alongside the database
-LOG_DIR = Path(__file__).parent / "logs"
+# Detect Streamlit Cloud vs. local environment
+if os.path.exists("/mount/src/ai-soc-analyst"):
+    LOG_DIR = Path("/tmp/logs")
+else:
+    LOG_DIR = Path(__file__).parent / "logs"
 LOG_DIR.mkdir(exist_ok=True)
 
 LOG_FILE = LOG_DIR / "soc_audit.log"

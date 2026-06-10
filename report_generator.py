@@ -11,7 +11,11 @@ from pathlib import Path
 # time period. Designed to be printable and shareable.
 # ---------------------------------------------------------
 
-REPORTS_DIR = Path(__file__).parent / "reports"
+# Detect Streamlit Cloud vs. local environment
+if os.path.exists("/mount/src/ai-soc-analyst"):
+    REPORTS_DIR = Path("/tmp/reports")
+else:
+    REPORTS_DIR = Path(__file__).parent / "reports"
 REPORTS_DIR.mkdir(exist_ok=True)
 
 
