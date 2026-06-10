@@ -514,14 +514,14 @@ with tabs[0]:
 
                 with col_main:
                     st.markdown('<div class="section-label">AI Triage Summary</div>', unsafe_allow_html=True)
-                    st.markdown(f'<div class="analysis-box">{a.get("ai_summary","No summary available.")}</div>', unsafe_allow_html=True)
+                    st.markdown(f'<div class="analysis-box">{a.get("ai_summary") or "No summary available."}</div>', unsafe_allow_html=True)
 
                     st.markdown('<div class="section-label">MITRE ATT&CK Mapping</div>', unsafe_allow_html=True)
-                    mitre_display = a.get("mitre_tag", "Not mapped").replace("\n", "\n  ")
+                    mitre_display = (a.get("mitre_tag") or "Not mapped").replace("\n", "\n  ")
                     st.info(f"🛡️ {mitre_display}")
 
                     st.markdown('<div class="section-label">Recommended Response</div>', unsafe_allow_html=True)
-                    st.markdown(f'<div class="analysis-box">{a.get("response_plan","No response plan.")}</div>', unsafe_allow_html=True)
+                    st.markdown(f'<div class="analysis-box">{a.get("response_plan") or "No response plan."}</div>', unsafe_allow_html=True)
 
                 with col_intel:
                     st.markdown('<div class="section-label">VirusTotal Intelligence</div>', unsafe_allow_html=True)
