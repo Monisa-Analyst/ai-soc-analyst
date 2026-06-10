@@ -5,7 +5,7 @@
         "dest_ip": "prod-web-01",
         "event_type": "SQL Injection",
         "severity": "Critical",
-        "message": "Detected malicious string in user-agent header"
+        "message": "Detected malicious UNION SELECT string in user-agent header — automated SQLMap fingerprinting"
     },
     {
         "timestamp": "2026-03-03T10:15:32",
@@ -13,7 +13,7 @@
         "dest_ip": "vpn-gateway",
         "event_type": "Brute Force",
         "severity": "High",
-        "message": "Multiple failed VPN authentication attempts from foreign IP"
+        "message": "Multiple failed VPN authentication attempts from foreign IP — 200 failures in 3 minutes"
     },
     {
         "timestamp": "2026-03-03T10:22:11",
@@ -21,6 +21,46 @@
         "dest_ip": "external-cdn.com",
         "event_type": "Data Exfiltration",
         "severity": "Critical",
-        "message": "Unusual outbound data transfer of 2.4GB to unknown external host"
+        "message": "Unusual outbound data transfer of 2.4GB to unknown external host — DLP triggered on archive signature"
+    },
+    {
+        "timestamp": "2026-03-03T10:55:00",
+        "source_ip": "94.102.49.55",
+        "dest_ip": "workstation-045",
+        "event_type": "Malware",
+        "severity": "Critical",
+        "message": "Trojan dropper executed — spawned cmd.exe child process and modified HKCU Run registry key"
+    },
+    {
+        "timestamp": "2026-03-03T11:08:19",
+        "source_ip": "45.33.32.156",
+        "dest_ip": "hr-fileserver-01",
+        "event_type": "Reconnaissance",
+        "severity": "Medium",
+        "message": "Port sweep detected on internal HR file server — probing SMB port 445 and RDP port 3389"
+    },
+    {
+        "timestamp": "2026-03-03T11:30:00",
+        "source_ip": "185.220.101.34",
+        "dest_ip": "mail-server-01",
+        "event_type": "Phishing",
+        "severity": "High",
+        "message": "Spear phishing email detected targeting CFO account — embedded credential harvesting link"
+    },
+    {
+        "timestamp": "2026-03-03T12:00:00",
+        "source_ip": "192.168.5.23",
+        "dest_ip": "dc-primary-01",
+        "event_type": "Brute Force",
+        "severity": "High",
+        "message": "Kerberoastable service account TGS ticket requested — potential offline cracking attempt"
+    },
+    {
+        "timestamp": "2026-03-03T12:45:00",
+        "source_ip": "103.21.244.12",
+        "dest_ip": "backup-server-01",
+        "event_type": "Ransomware",
+        "severity": "Critical",
+        "message": "Ransomware precursor activity — vssadmin delete shadows and bcdedit /set recoveryenabled No executed"
     }
 ]

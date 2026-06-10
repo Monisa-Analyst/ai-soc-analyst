@@ -1,6 +1,13 @@
 timestamp,source_ip,dest_ip,event_type,severity,message
-2026-03-03T08:12:30,185.220.101.34,web-prod-01,SQL Injection,Critical,Malicious SQL payload detected in POST /api/login
-2026-03-03T08:14:55,45.33.32.156,dc-internal-02,Brute Force,High,120 failed SSH logins for root in 60 seconds
-2026-03-03T08:21:10,8.8.8.8,workstation-114,Reconnaissance,Medium,Nmap SYN scan detected across 1024 ports
-2026-03-03T09:05:42,103.21.244.12,mail-gw-01,Phishing,High,Suspicious attachment in inbound email from external domain
-2026-03-03T09:33:18,192.168.1.55,file-server-03,Malware,Critical,Trojan signature detected in uploaded binary
+2026-03-03T08:12:30,185.220.101.34,web-prod-01,SQL Injection,Critical,Malicious SQL payload detected in POST /api/login — UNION SELECT exfiltration attempt
+2026-03-03T08:14:55,45.33.32.156,dc-internal-02,Brute Force,High,120 failed SSH logins for root in 60 seconds — automated credential stuffing detected
+2026-03-03T08:21:10,8.8.8.8,workstation-114,Reconnaissance,Medium,Nmap SYN scan detected across all 65535 ports — OS fingerprinting in progress
+2026-03-03T09:05:42,103.21.244.12,mail-gw-01,Phishing,High,Suspicious attachment in inbound email from external domain — SPF FAIL and DKIM mismatch
+2026-03-03T09:33:18,192.168.1.55,file-server-03,Malware,Critical,Trojan signature detected in uploaded binary — process hollowing into svchost.exe observed
+2026-03-03T10:15:00,91.240.118.22,vpn-gateway,Brute Force,Critical,Password spray attack — 500+ failed VPN auth attempts across 50+ employee accounts
+2026-03-03T10:45:22,223.25.1.88,db-server-01,SQL Injection,Critical,Time-based blind SQL injection in API parameter — potential database enumeration
+2026-03-03T11:02:05,10.0.0.45,external-cdn.com,Data Exfiltration,Critical,Unusual 2.4GB outbound data transfer to unrecognized host — DLP triggered on DB dump signatures
+2026-03-03T11:30:11,94.102.49.55,workstation-088,Malware,High,Ransomware pre-encryption staging — shadow copy deletion detected (vssadmin delete shadows)
+2026-03-03T12:01:44,185.220.101.99,web-prod-02,SQL Injection,High,Error-based SQL injection attempt detected in login form — database version fingerprinting
+2026-03-03T12:45:00,45.33.32.200,ad-server-01,Brute Force,High,Kerberoasting attack detected — TGS ticket requests for multiple service accounts
+2026-03-03T13:10:58,192.168.10.5,workstation-022,Reconnaissance,Low,Internal ARP scan detected — potential lateral movement preparation
