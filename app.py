@@ -351,9 +351,7 @@ def run_pipeline(logs_list: list, source: str = "Upload"):
 tabs = st.tabs(["📊 Dashboard", "📥 Ingest & Triage", "📋 Reports", "⚙️ Logs & Settings"])
 
 
-# =============================================================
-# TAB 1: DASHBOARD
-# =============================================================
+# --- Tab 1: Dashboard Analytics ---
 
 with tabs[0]:
     st.title("Triage Dashboard")
@@ -586,9 +584,7 @@ with tabs[0]:
         st.rerun()
 
 
-# =============================================================
-# TAB 2: INGEST & TRIAGE
-# =============================================================
+# --- Tab 2: Alert Ingestion and Triage ---
 
 with tabs[1]:
     st.title("Ingest & Triage")
@@ -697,9 +693,7 @@ with tabs[1]:
             st.rerun()
 
 
-# =============================================================
-# TAB 3: REPORTS
-# =============================================================
+# --- Tab 3: Report Generation and Export ---
 
 with tabs[2]:
     st.title("Reports & Export")
@@ -772,9 +766,7 @@ with tabs[2]:
             st.caption("No saved reports yet.")
 
 
-# =============================================================
-# TAB 4: LOGS & SETTINGS
-# =============================================================
+# --- Tab 4: System Logs and Configuration ---
 
 with tabs[3]:
     st.title("System Logs & Settings")
