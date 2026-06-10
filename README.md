@@ -1,5 +1,7 @@
 # Sentinel: SOC AI Triage Platform
 
+👉 **[Web Application](https://share.streamlit.io/monisa-analyst/ai-soc-analyst/main/app.py)**
+
 A locally-hosted, AI-assisted Security Operations Centre (SOC) triage system built with Python and Streamlit. Designed to automate Tier-1 analyst tasks including alert ingestion, threat enrichment, MITRE ATT&CK mapping, risk scoring, and incident response planning.
 
 ---
