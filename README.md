@@ -1,34 +1,33 @@
 # Sentinel: SOC Incident Ingestion & Triage Platform
 
 🌐 **[Live Web Application](https://share.streamlit.io/monisa-analyst/ai-soc-analyst/main/app.py)**  
-*Try the live Sentinel app directly in your browser. The app runs fully offline using deterministic fallbacks if you don't configure API keys.*
+*Try the live Sentinel app directly in your browser. The app runs fully offline using deterministic local fallbacks if you don't configure API keys.*
 
 ---
 
-## Project Overview
+## Why I Built Sentinel
 
-Sentinel is a Security Operations Center (SOC) triage automation platform designed to assist Tier-1 analysts. It automates the investigation pipeline for security event logs by parsing events, enriching them with external threat intelligence, mapping activity to MITRE ATT&CK techniques, calculating composite risk scores, and generating AI-assisted incident triage summaries.
+I built Sentinel because I wanted to solve a real, everyday bottleneck in Security Operations Centers: **alert fatigue**. Tier-1 analysts are constantly bombarded with raw logs, making it easy to miss actual threats. 
 
-I built this project to showcase:
-1.  **Security Log Engineering:** Parsing CSV and JSON logs and normalizing security metrics.
-2.  **Threat Intelligence Enrichment:** Integrating VirusTotal API v3 and correlating IPs against local threat databases.
-3.  **Risk Modeling:** Building composite scoring algorithms using threat intelligence, severity, and event context.
-4.  **Security Framework Mapping:** Mapping raw logs programmatically to MITRE ATT&CK techniques and Cyber Kill Chain phases.
-5.  **Multi-LLM Orchestration & Fallback:** Decoupled AI integration supporting **Anthropic Claude 3.5 Sonnet** and **OpenAI GPT-3.5-turbo** with automatic failover to offline deterministic models.
-6.  **Compliance Audit Logging:** Structuring event tracking with compliance-ready logs in JSON Lines (JSONL).
+Sentinel is a triage automation platform that acts as an analyst's co-pilot. Instead of manually cross-referencing IPs and matching MITRE tactics, Sentinel automates the entire investigation pipeline. It ingests events, enriches them with threat intelligence, maps them to MITRE ATT&CK tactics, scores their risk, and coordinates with **Anthropic Claude 3.5 Sonnet** (or OpenAI GPT) to write plain-language briefs and response playbooks.
+
+### Engineering Focus Areas
+When building this project, I focused on three core production-grade principles:
+1. **Multi-LLM Orchestration & Failover:** The system is decoupled from a single provider. It defaults to Anthropic Claude, but allows swapping to OpenAI. If both APIs are down or keys are absent, it seamlessly cascades to a deterministic local rule engine to ensure zero system downtime.
+2. **Database Optimization:** I utilized SQLite and designed performance indexes on high-frequency query columns (`severity`, `status`, and `risk_score`) to make the dashboard responsive under load.
+3. **Structured Telemetry & Audit Logs:** Every pipeline event is logged to a machine-readable JSONL file, creating a compliance-ready audit trail.
 
 ---
 
 ## Tech Stack & Architecture
 
-*   **UI Dashboard:** Streamlit (Custom Inter + JetBrains Mono stylesheet)
-*   **Database:** SQLite (optimized with performance indexing on severity, status, and risk)
-*   **Threat Enrichment:** VirusTotal API v3 (requests)
+*   **UI Dashboard:** Streamlit (customized with Inter & JetBrains Mono stylesheets for a premium dark theme)
+*   **Database:** SQLite (with custom indexes for query performance)
+*   **Threat Enrichment:** VirusTotal API v3 (live lookups via Python requests)
 *   **AI Engine:** Anthropic Claude (`claude-3-5-sonnet`) & OpenAI API (`gpt-3.5-turbo`)
-*   **Logging:** Python `logging` + JSONL structured event logs
-*   **Languages:** Python 3.11+, Pandas
+*   **Logging:** Structured JSON Lines (JSONL) + standard Python logging
 
-### Incident Triage Data Flow
+### How Data Flows Through the Pipeline
 
 ```
 Raw Alert Ingestion (CSV / JSON / Form Entry)
@@ -43,16 +42,16 @@ Raw Alert Ingestion (CSV / JSON / Form Entry)
    [ Local Threat Intel ] ────► Cross-reference IP ranges, actors & geographies
          │
          ▼
-   [ Composite Risk Engine ] ────► Calculate risk score (0-100)
+   [ Composite Risk Engine ] ────► Calculate weighted risk score (0-100)
          │
          ▼
-   [ Framework Mapper ] ────► Map to MITRE ATT&CK and Cyber Kill Chain
+   [ Framework Mapper ] ────► Map programmatically to MITRE ATT&CK techniques
          │
          ▼
-   [ AI Triage Engine ] ────► Generate analyst brief & playbook steps
+   [ AI Triage Engine ] ────► Dynamic briefings using Claude 3.5 Sonnet / OpenAI
          │
          ▼
-   [ Analyst Workspace ] ────► Display dashboard, update status & download reports
+   [ Analyst Workspace ] ────► Review dashboard, update status & download reports
 ```
 
 ---
@@ -60,55 +59,54 @@ Raw Alert Ingestion (CSV / JSON / Form Entry)
 ## Core Features
 
 ### 1. Multi-Source Alert Ingestion
-Analysts can load data into the triage pipeline using three methods:
--   **Log Upload:** Drag-and-drop security CSV files or JSON log arrays.
--   **Demo Data:** Single-click load of pre-built sample datasets representing real-world attacks.
--   **Manual Entry:** A simple UI form to ingest and triage a single security event.
+I wanted analysts to have flexibility in how they feed data into the triage pipeline:
+- **Log Upload:** Drag-and-drop CSV log exports or JSON event arrays.
+- **Demo Data:** Single-click load of pre-built attack simulation logs (covering SQL injection, lateral movement, brute force, etc.).
+- **Manual Entry:** A simple UI form to quickly run a single alert through the threat analysis pipeline.
 
 ### 2. Dual-Layer Threat Intelligence
--   **VirusTotal API Integration:** Live lookup for IP verdicts, detection counts, country codes, and ASN owners.
--   **Local Intelligence Engine:** Fallback lookup validating RFC 1918 private scopes, blacklisted CIDR blocks, known threat actor groups (e.g. Fancy Bear, Lazarus Group, TA505), and geo-political risk databases.
+To optimize API usage and protect search privacy, I built a tiered lookup engine:
+- **Local Threat Intel:** Validates private IP scopes (RFC 1918), checks known malicious CIDRs, matches known threat groups (e.g. Lazarus, Fancy Bear), and assesses geo-political risk factors.
+- **VirusTotal API:** If the IP is public, the platform makes live API v3 calls to pull detection counts, ASN owner information, and country codes.
 
 ### 3. MITRE ATT&CK & Cyber Kill Chain Mapping
-Sentinel matches raw log signatures to over 40 rules across the enterprise threat matrix:
--   **Initial Access:** Phishing (T1566), Exploit Public-Facing App (T1190).
--   **Execution:** PowerShell (T1059.001), Command Shell (T1059.003), WMI (T1047).
--   **Persistence:** Registry Run Keys (T1547.001), Scheduled Tasks (T1053.005).
--   **Defense Evasion:** Clear Event Logs (T1070.001), Disable Antivirus (T1562.001).
--   **Credential Access:** Brute Force (T1110), OS Credential Dumping (T1003).
--   **Impact:** Data Encrypted for Impact (T1486), Disk Wipe (T1561).
--   Maps each event to one of the **7 Cyber Kill Chain** phases.
+I mapped raw event logs programmatically against 40+ rules matching the Enterprise Matrix:
+- **Initial Access:** T1190 (Exploit Public App), T1566 (Phishing).
+- **Execution:** T1059.001 (PowerShell), T1059.003 (Command Shell).
+- **Persistence:** T1547.001 (Registry Run Keys), T1053.005 (Scheduled Tasks).
+- **Defense Evasion:** T1070.001 (Clear Event Logs), T1562.001 (Disable Antivirus).
+- **Credential Access:** T1110 (Brute Force), T1003 (OS Credential Dumping).
+- **Impact & Exfiltration:** T1486 (Data Encrypted for Impact), T1041 (Exfiltration over C2).
+- Classifies each attack into its respective **Cyber Kill Chain** phase.
 
-### 4. Composite Risk Score Engine
-Calculates a weighted prioritisation score (0–100) based on:
--   **Event Severity (30%):** Low, Medium, High, or Critical log classification.
--   **VirusTotal Verdict (30%):** Scale based on engines flag counts.
--   **Threat Intelligence (25%):** Blacklist matches or known threat actor attribution.
--   **Event Type Criticality (15%):** Ransomware, Exfiltration, or Trojan indicators.
+### 4. Custom Composite Risk Score Engine
+Instead of just relying on static severity tags, I designed a multi-factor risk scoring engine (0-100) based on:
+- **Event Severity (30%):** Log-level classification (Low to Critical).
+- **VirusTotal Verdict (30%):** Flag counts from participating AV engines.
+- **Local Threat Intel (25%):** Known threat actor correlation or geo-risk blacklist matches.
+- **Payload Criticality (15%):** Specific keywords matching high-risk signatures (e.g., Ransomware, Exfiltration).
 
 ### 5. Multi-LLM Orchestration & Intelligent Fallbacks
-Analysts can select the active AI triage provider dynamically from the dashboard:
--   **Anthropic Claude 3.5 Sonnet**: Provides advanced, context-rich threat analysis and playbook generation.
--   **OpenAI GPT-3.5-turbo**: Serves as a high-speed secondary provider.
--   **Deterministic Fallback**: Provides instantaneous local rule-based analysis if API keys are absent or external requests fail.
+I built an orchestration layer that lets the analyst choose the active LLM:
+- **Anthropic Claude 3.5 Sonnet:** The default choice, producing highly analytical briefings and technical mitigation playbooks.
+- **OpenAI GPT-3.5-turbo:** Integrated as a fast, alternative LLM.
+- **Deterministic Local Engine:** If API keys are missing or requests fail, the pipeline falls back to offline template generators, ensuring that the platform remains completely functional offline.
 
-### 6. Structured Reports & Compliance Exports
--   **Text Report:** Plain-text formatted executive briefings showing severity distribution bars, risk summaries, and analytical logs.
--   **JSON Report:** Standardized incident reports ready for forwarding to SIEM collectors or ticketing queues.
--   **CSV Audit Trail:** Flat export of all triaged alert columns.
--   **JSONL Log File:** Machine-readable action trail recording every ingest, lookup, threat verdict, and status update.
+### 6. Compliance Reporting & Audit Trails
+- **Text & JSON Handovers:** Download plain-text shift handovers or SIEM-ready JSON reports.
+- **JSONL Audit Logging:** Every ingest, lookup, threat verdict, and status update is logged to a structured event trail for audit and compliance.
 
 ---
 
 ## Local Setup & Installation
 
-### 1. Clone & Set Up Directory
+### 1. Clone & Navigate to Folder
 ```bash
 git clone https://github.com/Monisa-Analyst/ai-soc-analyst.git
 cd ai-soc-analyst
 ```
 
-### 2. Create Virtual Environment
+### 2. Set Up Virtual Environment
 ```bash
 python -m venv venv
 # Windows:
@@ -122,41 +120,35 @@ source venv/bin/activate
 pip install -r requirements.txt
 ```
 
-### 4. Configure Environment (Optional)
-Create a `.env` file in the root directory to enable live API integrations:
+### 4. Configure Environment Secrets
+Create a `.env` file in the root folder. You can configure any of the following keys:
 ```env
-ANTHROPIC_API_KEY=sk-ant-your-anthropic-key-here
-OPENAI_API_KEY=sk-your-openai-api-key-here
-VT_API_KEY=your-virustotal-api-key-here
+ANTHROPIC_API_KEY=sk-ant-your-actual-anthropic-key-here
+OPENAI_API_KEY=sk-your-actual-openai-key-here
+VT_API_KEY=your-actual-virustotal-key-here
 ```
-*Note: If no keys are provided, the system runs locally using offline deterministic fallback modules.*
+*Note: If keys are absent, the application runs fully offline using deterministic fallbacks.*
 
-### 5. Launch the Dashboard
+### 5. Launch the Streamlit Dashboard
 ```bash
 streamlit run app.py
 ```
-Open `http://localhost:8501` to use the application locally.
+Open `http://localhost:8501` to view the local application.
 
 ---
 
-## Project Structure
+## Codebase Walkthrough
 
-```
-├── app.py                  # Main Streamlit dashboard (Dashboard, Ingest, Reports, Logs tabs)
-├── analysis.py             # Incident triage briefs, MITRE mappings, and playbooks
-├── database.py             # SQLite interface (schema setup, KPIs, data filters)
-├── enrichment.py           # VirusTotal v3 API connection & deterministic mock fallback
-├── threat_intel.py         # Local Threat Intel lookup (CIDR lists, Geo Risk, Risk Scoring)
-├── report_generator.py     # Incident report formatter (Text and JSON generators)
-├── logger.py               # Compliance Audit logger (outputs soc_audit.log & pipeline_events.jsonl)
-├── sample_alerts.csv       # Preloaded test datasets (CSV format)
-├── sample_alerts.json      # Preloaded test datasets (JSON format)
-├── requirements.txt        # Python package listing
-└── README.md               # Sentinel documentation
-```
+*   `app.py` - Main Streamlit UI. Contains the tabs for Dashboard Analytics, Ingestion, Reports, and System Settings.
+*   `analysis.py` - Core threat mapping logic. Handles the multi-LLM orchestrator (Claude 3.5 Sonnet / OpenAI) and the offline fallback engine.
+*   `database.py` - SQLite helper file. Defines the schema, indexes, KPIs, and data operations.
+*   `threat_intel.py` - Local reputation database and risk scoring math.
+*   `enrichment.py` - VirusTotal API client code.
+*   `report_generator.py` - Report formatting code (JSON & Text).
+*   `logger.py` - Compliance-ready logging handlers.
 
 ---
 
 ## License
 
-This project is licensed under the MIT License.
+This project is open-source and licensed under the MIT License.
