@@ -14,7 +14,7 @@ I built this project to showcase:
 2.  **Threat Intelligence Enrichment:** Integrating VirusTotal API v3 and correlating IPs against local threat databases.
 3.  **Risk Modeling:** Building composite scoring algorithms using threat intelligence, severity, and event context.
 4.  **Security Framework Mapping:** Mapping raw logs programmatically to MITRE ATT&CK techniques and Cyber Kill Chain phases.
-5.  **LLM Security Orchestration:** Leveraging OpenAI GPT-3.5-turbo (with offline rule fallbacks) to generate incident briefs and response playbooks.
+5.  **Multi-LLM Orchestration & Fallback:** Decoupled AI integration supporting **Anthropic Claude 3.5 Sonnet** and **OpenAI GPT-3.5-turbo** with automatic failover to offline deterministic models.
 6.  **Compliance Audit Logging:** Structuring event tracking with compliance-ready logs in JSON Lines (JSONL).
 
 ---
@@ -22,9 +22,9 @@ I built this project to showcase:
 ## Tech Stack & Architecture
 
 *   **UI Dashboard:** Streamlit (Custom Inter + JetBrains Mono stylesheet)
-*   **Database:** SQLite (via standard Python sqlite3 library)
+*   **Database:** SQLite (optimized with performance indexing on severity, status, and risk)
 *   **Threat Enrichment:** VirusTotal API v3 (requests)
-*   **AI Engine:** OpenAI API (`gpt-3.5-turbo`)
+*   **AI Engine:** Anthropic Claude (`claude-3-5-sonnet`) & OpenAI API (`gpt-3.5-turbo`)
 *   **Logging:** Python `logging` + JSONL structured event logs
 *   **Languages:** Python 3.11+, Pandas
 
@@ -86,7 +86,13 @@ Calculates a weighted prioritisation score (0–100) based on:
 -   **Threat Intelligence (25%):** Blacklist matches or known threat actor attribution.
 -   **Event Type Criticality (15%):** Ransomware, Exfiltration, or Trojan indicators.
 
-### 5. Structured Reports & Compliance Exports
+### 5. Multi-LLM Orchestration & Intelligent Fallbacks
+Analysts can select the active AI triage provider dynamically from the dashboard:
+-   **Anthropic Claude 3.5 Sonnet**: Provides advanced, context-rich threat analysis and playbook generation.
+-   **OpenAI GPT-3.5-turbo**: Serves as a high-speed secondary provider.
+-   **Deterministic Fallback**: Provides instantaneous local rule-based analysis if API keys are absent or external requests fail.
+
+### 6. Structured Reports & Compliance Exports
 -   **Text Report:** Plain-text formatted executive briefings showing severity distribution bars, risk summaries, and analytical logs.
 -   **JSON Report:** Standardized incident reports ready for forwarding to SIEM collectors or ticketing queues.
 -   **CSV Audit Trail:** Flat export of all triaged alert columns.
@@ -119,6 +125,7 @@ pip install -r requirements.txt
 ### 4. Configure Environment (Optional)
 Create a `.env` file in the root directory to enable live API integrations:
 ```env
+ANTHROPIC_API_KEY=sk-ant-your-anthropic-key-here
 OPENAI_API_KEY=sk-your-openai-api-key-here
 VT_API_KEY=your-virustotal-api-key-here
 ```

@@ -2,6 +2,7 @@ import os
 import json
 from pathlib import Path
 from openai import OpenAI
+import anthropic
 from dotenv import load_dotenv
 
 # triage, mitre mappings, and playbooks
@@ -11,6 +12,9 @@ load_dotenv(Path(__file__).parent / ".env")
 
 _key = os.getenv("OPENAI_API_KEY")
 _client = OpenAI(api_key=_key) if _key and _key.startswith("sk-") else None
+
+_anthropic_key = os.getenv("ANTHROPIC_API_KEY")
+_anthropic_client = anthropic.Anthropic(api_key=_anthropic_key) if _anthropic_key and not _anthropic_key.startswith("your_") else None
 
 
 # map keyword patterns to mitre techniques
@@ -226,10 +230,9 @@ def _get_smart_summary(alert: dict) -> str:
 
 
 # alert triage
-def triage_alert(alert_details: dict) -> str:
-    """run alert triage via OpenAI or offline fallback profile"""
-    if _client:
-        prompt = f"""You are a senior SOC analyst at a Fortune 500 company.
+def triage_alert(alert_details: dict, provider: str = "Claude (Anthropic)") -> str:
+    """run alert triage via Claude (Anthropic), OpenAI, or offline fallback profile"""
+    prompt = f"""You are a senior SOC analyst at a Fortune 500 company.
 Analyze the following security alert and produce a structured Tier-1 triage report.
 
 Alert Data:
@@ -242,29 +245,47 @@ Your response MUST follow this exact structure:
 
 Be specific, technical, and concise. Do not use vague language."""
 
+    system_instruction = (
+        "You are a concise, no-fluff SOC analyst. "
+        "Write in technical language suitable for a cybersecurity incident report. "
+        "Never use filler phrases like 'certainly' or 'I hope this helps'."
+    )
+
+    # Try Anthropic Claude if selected and client is initialized
+    if provider == "Claude (Anthropic)" and _anthropic_client:
+        try:
+            resp = _anthropic_client.messages.create(
+                model="claude-3-5-sonnet-20241022",
+                max_tokens=400,
+                temperature=0.3,
+                system=system_instruction,
+                messages=[
+                    {"role": "user", "content": prompt}
+                ]
+            )
+            return resp.content[0].text.strip()
+        except Exception as e:
+            # Fall through to OpenAI if Claude fails and OpenAI is available
+            pass
+
+    # Try OpenAI if selected (or as fallback) and client is initialized
+    if (provider == "GPT-3.5 (OpenAI)" or not _anthropic_client) and _client:
         try:
             resp = _client.chat.completions.create(
                 model="gpt-3.5-turbo",
                 messages=[
-                    {
-                        "role": "system",
-                        "content": (
-                            "You are a concise, no-fluff SOC analyst. "
-                            "Write in technical language suitable for a cybersecurity incident report. "
-                            "Never use filler phrases like 'certainly' or 'I hope this helps'."
-                        )
-                    },
+                    {"role": "system", "content": system_instruction},
                     {"role": "user", "content": prompt},
                 ],
                 max_tokens=400,
-                temperature=0.3,  # Lower temperature = more consistent, technical output
+                temperature=0.3,
                 timeout=10
             )
             return resp.choices[0].message.content.strip()
         except Exception as e:
-            # Log the failure and fall through to the mock engine
             pass
 
+    # Deterministic local fallback
     return _get_smart_summary(alert_details)
 
 

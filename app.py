@@ -234,19 +234,14 @@ with st.sidebar:
     """, unsafe_allow_html=True)
 
     st.markdown("---")
-    st.markdown('<div style="font-size:0.68rem;color:#64748b;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:8px;">Quick Filters</div>', unsafe_allow_html=True)
+    st.markdown('<div style="font-size:0.68rem;color:#64748b;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:8px;">AI Configuration</div>', unsafe_allow_html=True)
 
-    # Status selector
-    status_filter = st.selectbox(
-        "Alert Status",
-        ["All", "New", "In Review", "Escalated", "Resolved", "False Positive"],
-        key="status_filter"
-    )
-
-    severity_filter = st.selectbox(
-        "Severity",
-        ["All", "Critical", "High", "Medium", "Low"],
-        key="severity_filter"
+    # LLM Provider selector
+    ai_provider = st.selectbox(
+        "LLM Provider",
+        ["Claude (Anthropic)", "GPT-3.5 (OpenAI)", "Deterministic Fallback"],
+        key="ai_provider",
+        help="Select the AI agent to orchestrate incident briefs. Runs fully local if keys are absent."
     )
 
     st.markdown("---")
@@ -318,7 +313,8 @@ def run_pipeline(logs_list: list, source: str = "Upload"):
             kill_chain = get_attack_phase(event_type)
 
             # Step 7: AI analysis summary
-            summary    = triage_alert(log)
+            provider = st.session_state.get("ai_provider", "Claude (Anthropic)")
+            summary    = triage_alert(log, provider=provider)
 
             # Step 8: Response recommendation
             response   = recommend_response(log, vt_info)
@@ -360,12 +356,8 @@ with tabs[0]:
     all_alerts = get_all_alerts()
     stats = get_statistics()
 
-    # Apply filters
+    # Display all alerts (quick filters removed)
     display_alerts = all_alerts
-    if status_filter != "All":
-        display_alerts = [a for a in display_alerts if a.get("status") == status_filter]
-    if severity_filter != "All":
-        display_alerts = [a for a in display_alerts if a.get("severity") == severity_filter]
 
     # kpi cards
     st.markdown("### Key Performance Indicators")
@@ -796,11 +788,13 @@ with tabs[3]:
         st.markdown("**API Keys**")
         st.caption("Set these in the `.env` file in the project root directory.")
 
-        openai_key = os.getenv("OPENAI_API_KEY", "")
-        vt_key     = os.getenv("VT_API_KEY", "")
+        openai_key    = os.getenv("OPENAI_API_KEY", "")
+        anthropic_key = os.getenv("ANTHROPIC_API_KEY", "")
+        vt_key        = os.getenv("VT_API_KEY", "")
 
+        st.markdown(f"- Claude (Anthropic): {'✅ Set' if anthropic_key and not anthropic_key.startswith('your_') else '⚠️ Not set (using fallback)'}")
         st.markdown(f"- OpenAI: {'✅ Set' if openai_key.startswith('sk-') else '⚠️ Not set (using fallback)'}")
-        st.markdown(f"- VirusTotal: {'✅ Set' if vt_key and not vt_key.startswith('YOUR_') else '⚠️ Not set (using mock)'}")
+        st.markdown(f"- VirusTotal: {'✅ Set' if vt_key and not vt_key.startswith('YOUR_') and not vt_key.startswith('your_') else '⚠️ Not set (using mock)'}")
 
         st.markdown("---")
         st.markdown("**System Information**")
