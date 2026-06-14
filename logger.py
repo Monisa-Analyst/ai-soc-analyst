@@ -209,3 +209,19 @@ def _append_jsonl(record: dict):
     """Appends a JSON record to the machine-readable JSONL pipeline log."""
     with open(PIPELINE_LOG, "a", encoding="utf-8") as f:
         f.write(json.dumps(record) + "\n")
+
+
+def clear_logs():
+    """truncates or clears the audit and event log files"""
+    if LOG_FILE.exists():
+        try:
+            with open(LOG_FILE, "w", encoding="utf-8") as f:
+                f.write("")
+        except Exception:
+            pass
+    if PIPELINE_LOG.exists():
+        try:
+            with open(PIPELINE_LOG, "w", encoding="utf-8") as f:
+                f.write("")
+        except Exception:
+            pass

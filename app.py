@@ -23,7 +23,7 @@ from report_generator import (
 from logger import (
     log_ingestion, log_enrichment, log_analysis,
     log_status_change, log_error, log_report_generated,
-    get_recent_logs
+    get_recent_logs, clear_logs
 )
 
 
@@ -56,6 +56,9 @@ section[data-testid="stSidebar"] {
 }
 section[data-testid="stSidebar"] * {
     color: #e2e8f0 !important;
+}
+section[data-testid="stSidebar"] div[data-baseweb="select"] * {
+    color: #0f172a !important;
 }
 section[data-testid="stSidebar"] .stButton > button {
     background: #1e293b;
@@ -249,7 +252,8 @@ with st.sidebar:
 
     if st.button("🗑️ Clear All Alerts", key="clear_btn"):
         clear_all_alerts()
-        st.warning("Database cleared.")
+        clear_logs()
+        st.warning("Database and logs cleared.")
         st.rerun()
 
     st.markdown("---")
@@ -806,5 +810,6 @@ with tabs[3]:
         st.markdown("**Danger Zone**")
         if st.button("🗑️ Clear Database & Logs", type="secondary"):
             clear_all_alerts()
-            st.warning("Database cleared. Logs preserved.")
+            clear_logs()
+            st.warning("Database and logs cleared.")
             st.rerun()
