@@ -790,7 +790,6 @@ with tabs[3]:
 
         st.markdown("---")
         st.markdown("**API Keys**")
-        st.caption("Set these in the `.env` file in the project root directory.")
 
         openai_key    = os.getenv("OPENAI_API_KEY", "")
         anthropic_key = os.getenv("ANTHROPIC_API_KEY", "")
